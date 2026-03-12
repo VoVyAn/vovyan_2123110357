@@ -1,0 +1,6 @@
+@vovyan_2123110357_HostAddress = http://localhost:5260
+
+GET {{vovyan_2123110357_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
