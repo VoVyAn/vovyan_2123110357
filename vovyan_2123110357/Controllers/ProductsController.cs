@@ -1,77 +1,77 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using vovyan_2123110357.Data;
-using vovyan_2123110357.Model;
+using vovyan_2123110357.Models;
+using vovyan_2123110357.Services;
+using vovyan_2123110357.DTOs;
 
 namespace vovyan_2123110357.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/products")]
     [ApiController]
-    public class ProductController : ControllerBase
+    public class ProductsController : ControllerBase
     {
-        private readonly vovyan_2123110357Context _context;
+        private readonly ProductService _service;
 
-        public ProductController(vovyan_2123110357Context context)
+        public ProductsController(ProductService service)
         {
-            _context = context;
+            _service = service;
         }
 
-        // GET: api/product
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public IActionResult GetAll()
         {
-            var products = await _context.Products.ToListAsync();
-            return Ok(products);
+            return Ok(_service.GetAll());
         }
 
-        // GET: api/product/1
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public IActionResult Get(int id)
         {
-            var product = await _context.Products.FindAsync(id);
-
-            if (product == null)
-                return NotFound();
-
+            var product = _service.GetById(id);
+            if (product == null) return NotFound();
             return Ok(product);
         }
 
-        // POST: api/product
         [HttpPost]
-        public async Task<IActionResult> Create(Product product)
+        public IActionResult Create(ProductDTO dto)
         {
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
+            var product = new Product
+            {
+                CategoryId = dto.CategoryId,
+                Name = dto.Name,
+                Description = dto.Description,
+                Price = dto.Price,
+                Quantity = dto.Quantity,
+                ImageUrl = dto.ImageUrl
+            };
 
-            return Ok(product);
+            return Ok(_service.Create(product));
         }
 
-        // PUT: api/product/1
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, Product product)
+        public IActionResult Update(int id, ProductDTO dto)
         {
-            if (id != product.Id)
-                return BadRequest();
+            var updated = new Product
+            {
+                CategoryId = dto.CategoryId,
+                Name = dto.Name,
+                Description = dto.Description,
+                Price = dto.Price,
+                Quantity = dto.Quantity,
+                ImageUrl = dto.ImageUrl
+            };
 
-            _context.Entry(product).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            var result = _service.Update(id, updated);
+            if (result == null) return NotFound();
 
-            return Ok(product);
+            return Ok(result);
         }
 
-        // DELETE: api/product/1
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public IActionResult Delete(int id)
         {
-            var product = await _context.Products.FindAsync(id);
+            var success = _service.Delete(id);
+            if (!success) return NotFound();
 
-            if (product == null)
-                return NotFound();
-
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
-
-            return Ok("Deleted");
+            return Ok();
         }
     }
 }

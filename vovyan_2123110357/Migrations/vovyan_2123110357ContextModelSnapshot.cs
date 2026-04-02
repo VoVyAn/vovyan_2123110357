@@ -9,7 +9,7 @@ using vovyan_2123110357.Data;
 
 namespace vovyan_2123110357.Migrations
 {
-    [DbContext(typeof(vovyan_2123110357Context))]
+    [DbContext(typeof(AppDbContext))]
     partial class vovyan_2123110357ContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

@@ -1,0 +1,122 @@
+{
+  "info": {
+    "_postman_id": "4f77f6f2-3f66-4f4d-b7c4-4af4dddb9700",
+    "name": "F&B Admin Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Admin Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": "{{baseUrl}}/api/users/login"
+      }
+    },
+    {
+      "name": "Admin - Dashboard",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/admin/dashboard"
+      }
+    },
+    {
+      "name": "Admin - Orders (paged)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/admin/orders?page=1&pageSize=10&status=Completed"
+      }
+    },
+    {
+      "name": "Admin - Update Order Status",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/admin/orders/1/status?status=Processing"
+      }
+    },
+    {
+      "name": "Admin - Tables",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/admin/tables"
+      }
+    },
+    {
+      "name": "Admin - Customers (search + paged)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/admin/customers?q=guest&page=1&pageSize=10"
+      }
+    },
+    {
+      "name": "Admin - Payments (filtered + paged)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/admin/payments?method=Cash&status=Paid&page=1&pageSize=10"
+      }
+    },
+    {
+      "name": "Admin - Revenue Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/admin/reports/revenue?from=2026-04-01&to=2026-04-30"
+      }
+    },
+    {
+      "name": "Admin - Get Settings",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+        ],
+        "url": "{{baseUrl}}/api/admin/settings"
+      }
+    },
+    {
+      "name": "Admin - Update Settings",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": 1,\n  \"restaurantName\": \"F&B Restaurant\",\n  \"address\": \"123 Nguyen Trai, Ha Noi\",\n  \"phone\": \"0900000000\",\n  \"openHours\": \"09:00 - 22:00\",\n  \"theme\": \"DarkBlue\"\n}"
+        },
+        "url": "{{baseUrl}}/api/admin/settings"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5217" },
+    { "key": "adminToken", "value": "" }
+  ]
+}
