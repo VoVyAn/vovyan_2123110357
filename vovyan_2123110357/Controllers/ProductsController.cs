@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using vovyan_2123110357.Data;
 using vovyan_2123110357.Model;
@@ -12,97 +7,71 @@ namespace vovyan_2123110357.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController : ControllerBase
+    public class ProductController : ControllerBase
     {
         private readonly vovyan_2123110357Context _context;
 
-        public ProductsController(vovyan_2123110357Context context)
+        public ProductController(vovyan_2123110357Context context)
         {
             _context = context;
         }
 
-        // GET: api/Products
+        // GET: api/product
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProduct()
+        public async Task<IActionResult> GetAll()
         {
-            return await _context.Product.ToListAsync();
+            var products = await _context.Products.ToListAsync();
+            return Ok(products);
         }
 
-        // GET: api/Products/5
+        // GET: api/product/1
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var product = await _context.Product.FindAsync(id);
+            var product = await _context.Products.FindAsync(id);
 
             if (product == null)
-            {
                 return NotFound();
-            }
 
-            return product;
+            return Ok(product);
         }
 
-        // PUT: api/Products/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // POST: api/product
+        [HttpPost]
+        public async Task<IActionResult> Create(Product product)
+        {
+            _context.Products.Add(product);
+            await _context.SaveChangesAsync();
+
+            return Ok(product);
+        }
+
+        // PUT: api/product/1
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(int id, Product product)
+        public async Task<IActionResult> Update(int id, Product product)
         {
             if (id != product.Id)
-            {
                 return BadRequest();
-            }
 
             _context.Entry(product).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProductExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/Products
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct(Product product)
-        {
-            _context.Product.Add(product);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetProduct", new { id = product.Id }, product);
+            return Ok(product);
         }
 
-        // DELETE: api/Products/5
+        // DELETE: api/product/1
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var product = await _context.Product.FindAsync(id);
-            if (product == null)
-            {
-                return NotFound();
-            }
+            var product = await _context.Products.FindAsync(id);
 
-            _context.Product.Remove(product);
+            if (product == null)
+                return NotFound();
+
+            _context.Products.Remove(product);
             await _context.SaveChangesAsync();
 
-            return NoContent();
-        }
-
-        private bool ProductExists(int id)
-        {
-            return _context.Product.Any(e => e.Id == id);
+            return Ok("Deleted");
         }
     }
 }
