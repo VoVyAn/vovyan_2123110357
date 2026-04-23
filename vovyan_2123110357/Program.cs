@@ -59,32 +59,52 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    
-    // Check for our custom Render DB URL
+    // 1. Try to find the connection string from various sources
     var databaseUrl = Environment.GetEnvironmentVariable("RENDER_DB_URL")
                      ?? Environment.GetEnvironmentVariable("INTERNAL_DATABASE_URL")
-                     ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+                     ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+                     ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
+
+    // 2. Debug logging
+    Console.WriteLine("[DB DEBUG] --- Checking Environment Variables ---");
+    Console.WriteLine($"[DB DEBUG] RENDER_DB_URL present: {!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RENDER_DB_URL"))}");
+    Console.WriteLine($"[DB DEBUG] DATABASE_URL present: {!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_URL"))}");
+    Console.WriteLine($"[DB DEBUG] INTERNAL_DATABASE_URL present: {!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("INTERNAL_DATABASE_URL"))}");
     
-    Console.WriteLine("[DB DEBUG] --- Environment Variable Keys ---");
-    foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
+    if (string.IsNullOrEmpty(databaseUrl))
     {
-        Console.WriteLine($"[DB DEBUG] Key: {de.Key}");
+        Console.WriteLine("[DB DEBUG] Using appsettings.json fallback");
+        connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     }
-    Console.WriteLine("[DB DEBUG] ---------------------------------");
-    
-    Console.WriteLine($"[DB DEBUG] IS_RENDER: {Environment.GetEnvironmentVariable("IS_RENDER")}");
-    Console.WriteLine($"[DB DEBUG] Using connection source: {(string.IsNullOrEmpty(databaseUrl) ? "appsettings.json fallback" : "Environment Variable (" + (Environment.GetEnvironmentVariable("RENDER_DB_URL") != null ? "RENDER_DB_URL" : "Other") + ")")}");
-    
-    if (!string.IsNullOrEmpty(databaseUrl))
+    else
     {
-        connectionString = databaseUrl;
-        if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
+        Console.WriteLine("[DB DEBUG] Database URL found in environment variables");
+        
+        // Handle postgres:// URI format
+        if (databaseUrl.StartsWith("postgres://") || databaseUrl.StartsWith("postgresql://"))
         {
-            if (!connectionString.Contains("sslmode="))
+            try 
             {
-                connectionString += (connectionString.Contains("?") ? "&" : "?") + "sslmode=require";
+                var uri = new Uri(databaseUrl);
+                var userInfo = uri.UserInfo.Split(':');
+                var user = userInfo[0];
+                var password = userInfo.Length > 1 ? userInfo[1] : "";
+                var host = uri.Host;
+                var port = uri.Port > 0 ? uri.Port : 5432;
+                var database = uri.AbsolutePath.TrimStart('/');
+                
+                connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={password};SslMode=Require;Trust Server Certificate=true;";
+                Console.WriteLine("[DB DEBUG] Successfully parsed postgres URI");
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DB DEBUG] Error parsing URI: {ex.Message}. Using raw string.");
+                connectionString = databaseUrl;
+            }
+        }
+        else
+        {
+            connectionString = databaseUrl;
         }
     }
     
