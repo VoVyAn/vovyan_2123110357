@@ -60,27 +60,23 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    
+    // Check for Render's database environment variables
+    var databaseUrl = Environment.GetEnvironmentVariable("INTERNAL_DATABASE_URL") 
+                     ?? Environment.GetEnvironmentVariable("DATABASE_URL");
     
     if (!string.IsNullOrEmpty(databaseUrl))
     {
-        // Render provides DATABASE_URL in postgres://user:password@host:port/database format
-        // We need to convert it to Npgsql format if it starts with postgres://
-        if (databaseUrl.StartsWith("postgres://") || databaseUrl.StartsWith("postgresql://"))
+        connectionString = databaseUrl;
+        
+        // If it's a postgres:// URL, Npgsql handles it, but we should ensure SSL
+        if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
         {
-            var databaseUri = new Uri(databaseUrl);
-            var userInfo = databaseUri.UserInfo.Split(':');
-            var user = userInfo[0];
-            var password = userInfo.Length > 1 ? userInfo[1] : "";
-            var host = databaseUri.Host;
-            var port = databaseUri.Port;
-            var database = databaseUri.AbsolutePath.TrimStart('/');
-
-            connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={password};SSL Mode=Require;Trust Server Certificate=True";
-        }
-        else
-        {
-            connectionString = databaseUrl;
+            // Add sslmode if not present
+            if (!connectionString.Contains("sslmode="))
+            {
+                connectionString += (connectionString.Contains("?") ? "&" : "?") + "sslmode=require";
+            }
         }
     }
     options.UseNpgsql(connectionString);

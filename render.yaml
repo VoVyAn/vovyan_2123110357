@@ -11,6 +11,10 @@ services:
         fromDatabase:
           name: vovyan-db
           property: connectionString
+      - key: INTERNAL_DATABASE_URL
+        fromDatabase:
+          name: vovyan-db
+          property: internalConnectionString
       - key: Jwt__Secret
         generateValue: true
       - key: Jwt__Issuer
