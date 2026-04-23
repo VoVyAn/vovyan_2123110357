@@ -11,6 +11,8 @@ services:
         fromDatabase:
           name: vovyan-db
           property: connectionString
+      - key: IS_RENDER
+        value: "true"
       - key: Jwt__Secret
         generateValue: true
       - key: Jwt__Issuer

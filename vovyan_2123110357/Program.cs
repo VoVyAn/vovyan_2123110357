@@ -66,6 +66,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
                      ?? Environment.GetEnvironmentVariable("INTERNAL_DATABASE_URL")
                      ?? Environment.GetEnvironmentVariable("DATABASE_URL");
     
+    Console.WriteLine("[DB DEBUG] --- Environment Variable Keys ---");
+    foreach (System.Collections.DictionaryEntry de in Environment.GetEnvironmentVariables())
+    {
+        Console.WriteLine($"[DB DEBUG] Key: {de.Key}");
+    }
+    Console.WriteLine("[DB DEBUG] ---------------------------------");
+    
+    Console.WriteLine($"[DB DEBUG] IS_RENDER: {Environment.GetEnvironmentVariable("IS_RENDER")}");
     Console.WriteLine($"[DB DEBUG] Using connection source: {(string.IsNullOrEmpty(databaseUrl) ? "appsettings.json fallback" : "Environment Variable (" + (Environment.GetEnvironmentVariable("RENDER_DB_URL") != null ? "RENDER_DB_URL" : "Other") + ")")}");
     
     if (!string.IsNullOrEmpty(databaseUrl))
