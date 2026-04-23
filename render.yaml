@@ -2,7 +2,7 @@ services:
   # 1. Backend API (Docker)
   - type: web
     name: vovyan-backend
-    runtime: docker
+    env: docker
     dockerContext: .
     dockerfilePath: Dockerfile
     plan: free
@@ -14,7 +14,7 @@ services:
       - key: IS_RENDER
         value: "true"
       - key: Jwt__Secret
-        generateValue: true
+        value: "THIS_IS_A_VERY_LONG_SECRET_KEY_FOR_JWT_TOKEN_2026_RENDER"
       - key: Jwt__Issuer
         value: vovyan-backend
       - key: Jwt__Audience
@@ -27,13 +27,6 @@ services:
     rootDir: frontend-admin
     buildCommand: npm install && npm run build
     publishPath: dist
-    plan: free
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          name: vovyan-backend
-          type: web
-          property: host
 
   # 3. Frontend Booking (Static Site)
   - type: web
@@ -42,13 +35,6 @@ services:
     rootDir: frontend-booking
     buildCommand: npm install && npm run build
     publishPath: dist
-    plan: free
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          name: vovyan-backend
-          type: web
-          property: host
 
 databases:
   - name: vovyan-db
