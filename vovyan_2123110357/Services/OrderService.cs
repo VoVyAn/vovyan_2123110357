@@ -83,7 +83,7 @@ namespace vovyan_2123110357.Services
             var order = new Order
             {
                 TableId = tableId,
-                TotalAmount = totalAmount - discountAmount,
+                TotalAmount = totalAmount,
                 Status = "Paid",
                 UserId = userId,
                 DiscountCode = discountCode,

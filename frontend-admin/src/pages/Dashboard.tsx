@@ -10,6 +10,13 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const role = localStorage.getItem('role')?.toUpperCase();
+    if (role === 'USERPHUCVU' || role === 'PHUCVU') {
+      window.location.href = '/pos';
+    }
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const [dashRes, ordersRes] = await Promise.all([
@@ -32,21 +39,21 @@ export const Dashboard = () => {
   const statCards = [
     { 
       title: "Revenue Today", 
-      value: `${data?.revenueToday.toLocaleString()} VND`, 
+      value: `${(data?.revenueToday ?? 0).toLocaleString()} VND`, 
       increase: "+14%", 
       icon: <DollarSign size={24} />, 
       color: "primary" 
     },
     { 
       title: "Orders Today", 
-      value: data?.orderCountToday.toString() || "0", 
+      value: (data?.orderCountToday ?? 0).toString(), 
       increase: "+5%", 
       icon: <ShoppingBag size={24} />, 
       color: "success" 
     },
     { 
       title: "Active Tables", 
-      value: `${data?.tableStatus.serving} / ${data ? (data.tableStatus.empty + data.tableStatus.serving + data.tableStatus.reserved) : 0}`, 
+      value: `${data?.tableStatus?.serving ?? 0} / ${data?.tableStatus ? (data.tableStatus.empty + data.tableStatus.serving + data.tableStatus.reserved) : 0}`, 
       increase: "Normal", 
       icon: <Utensils size={24} />, 
       color: "warning" 

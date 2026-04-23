@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import productService from '../api/productService';
 import type { Product, Category, ProductDTO } from '../api/productService';
+import { dispatchNotification } from '../utils/notifications';
+import { BASE_URL } from '../api/apiClient';
 
 export const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -17,6 +19,12 @@ export const Products = () => {
     quantity: 0,
     imageUrl: ''
   });
+
+  const getImageUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
 
   const fetchData = async () => {
     try {
@@ -41,6 +49,7 @@ export const Products = () => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
       await productService.deleteProduct(id);
+      dispatchNotification(`Đã xóa sản phẩm ID: ${id}`);
       fetchData();
     } catch (error) {
       alert('Error deleting product');
@@ -97,8 +106,10 @@ export const Products = () => {
     try {
       if (editingProduct) {
         await productService.updateProduct(editingProduct.id, formData);
+        dispatchNotification(`Đã cập nhật sản phẩm: ${formData.name}`);
       } else {
         await productService.createProduct(formData);
+        dispatchNotification(`Đã thêm sản phẩm mới: ${formData.name}`);
       }
       setIsModalOpen(false);
       fetchData();
@@ -136,7 +147,7 @@ export const Products = () => {
                   <tr key={product.id}>
                     <td>{product.id}</td>
                     <td>
-                      <img src={product.imageUrl} alt={product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                      <img src={getImageUrl(product.imageUrl)} alt={product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
                     </td>
                     <td>{product.name}</td>
                     <td>{product.price.toLocaleString()} VND</td>
@@ -208,7 +219,7 @@ export const Products = () => {
                       className="w-24 h-24 rounded border-2 border-dashed border-slate-700 flex items-center justify-center overflow-hidden bg-slate-900"
                     >
                       {formData.imageUrl ? (
-                        <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <img src={getImageUrl(formData.imageUrl)} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
                         <span className="text-slate-500 text-xs">No Image</span>
                       )}

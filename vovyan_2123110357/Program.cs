@@ -11,8 +11,11 @@ using vovyan_2123110357.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.Services.AddControllers().AddJsonOptions(x =>
-                x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+});
 
 // Enable CORS
 builder.Services.AddCors(options =>
@@ -126,6 +129,28 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.Migrate();
+    
+    // Ensure FullName column exists and admin has correct role
+    try {
+        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Users') AND name = 'FullName') ALTER TABLE dbo.Users ADD FullName NVARCHAR(MAX) NULL;");
+        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Users') AND name = 'Code') ALTER TABLE dbo.Users ADD Code NVARCHAR(MAX) NULL;");
+        
+        // Force admin user to have Admin role to avoid 403 errors
+        dbContext.Database.ExecuteSqlRaw("UPDATE dbo.Users SET Role = 'Admin' WHERE Username = 'admin';");
+
+        // FIX: Convert absolute localhost image URLs to relative paths
+        dbContext.Database.ExecuteSqlRaw(@"
+            UPDATE dbo.Products 
+            SET ImageUrl = '/uploads/' + REVERSE(SUBSTRING(REVERSE(ImageUrl), 1, CHARINDEX('/', REVERSE(ImageUrl)) - 1))
+            WHERE ImageUrl LIKE 'http%://%/uploads/%';
+            
+            UPDATE dbo.ProductDetails 
+            SET ImageUrl = '/uploads/' + REVERSE(SUBSTRING(REVERSE(ImageUrl), 1, CHARINDEX('/', REVERSE(ImageUrl)) - 1))
+            WHERE ImageUrl LIKE 'http%://%/uploads/%';
+        ");
+    } catch (Exception ex) {
+        Console.WriteLine("⚠️ Database update warning: " + ex.Message);
+    }
 
     try
     {
@@ -183,17 +208,11 @@ app.UseStatusCodePages(async statusContext =>
 
 app.UseCors("AllowAll");
 
-app.UseStaticFiles(); // For wwwroot
+app.UseStaticFiles(); // Serves files from wwwroot
 
-// Ensure uploads folder is accessible
-var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
+// Ensure uploads folder exists in wwwroot
+var uploadsPath = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "uploads");
 if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
-    RequestPath = "/uploads"
-});
 
 app.UseAuthentication();
 app.UseAuthorization();

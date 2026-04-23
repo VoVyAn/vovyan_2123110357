@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import productService from '../api/productService';
 import type { Category, CategoryDTO } from '../api/productService';
+import { dispatchNotification } from '../utils/notifications';
 
 export const Categories = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -28,6 +29,7 @@ export const Categories = () => {
     if (!window.confirm('Are you sure you want to delete this category?')) return;
     try {
       await productService.deleteCategory(id);
+      dispatchNotification(`Đã xóa danh mục ID: ${id}`);
       fetchCategories();
     } catch (error) {
       alert('Error deleting category');
@@ -50,8 +52,10 @@ export const Categories = () => {
     try {
       if (editingCategory) {
         await productService.updateCategory(editingCategory.id, formData);
+        dispatchNotification(`Đã cập nhật danh mục: ${formData.name}`);
       } else {
         await productService.createCategory(formData);
+        dispatchNotification(`Đã thêm danh mục mới: ${formData.name}`);
       }
       setIsModalOpen(false);
       fetchCategories();

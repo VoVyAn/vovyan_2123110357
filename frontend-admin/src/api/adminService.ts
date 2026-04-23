@@ -29,6 +29,7 @@ export interface PagedResult<T> {
 export interface User {
   id: number;
   username: string;
+  fullName: string;
   role: string;
   code: string;
   password?: string;

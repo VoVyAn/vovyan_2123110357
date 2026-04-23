@@ -8,7 +8,7 @@ namespace vovyan_2123110357.Controllers
 {
     [Route("api/admin")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,UserCaptain")]
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -163,6 +163,7 @@ namespace vovyan_2123110357.Controllers
             if (user == null) return NotFound();
 
             user.Username = updated.Username;
+            user.FullName = updated.FullName;
             if (!string.IsNullOrEmpty(updated.Password))
                 user.Password = updated.Password;
             user.Role = updated.Role;

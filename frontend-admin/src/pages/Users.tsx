@@ -10,6 +10,7 @@ export const Users = () => {
   
   const [formData, setFormData] = useState({
     username: '',
+    fullName: '',
     password: '',
     role: 'UserPhucvu',
     code: ''
@@ -47,6 +48,7 @@ export const Users = () => {
       setEditingUser(user);
       setFormData({
         username: user.username,
+        fullName: user.fullName || '',
         password: '', // Don't show password
         role: user.role,
         code: user.code
@@ -55,6 +57,7 @@ export const Users = () => {
       setEditingUser(null);
       setFormData({
         username: '',
+        fullName: '',
         password: '',
         role: 'UserPhucvu',
         code: ''
@@ -77,8 +80,10 @@ export const Users = () => {
       }
       setIsModalOpen(false);
       fetchUsers();
-    } catch (error) {
-      alert('Error saving user');
+    } catch (error: any) {
+      console.error('Error saving user:', error);
+      const msg = error.response?.data?.message || error.message || 'Unknown error';
+      alert('Lỗi khi lưu: ' + msg);
     }
   };
 
@@ -103,7 +108,8 @@ export const Users = () => {
               <thead>
                 <tr>
                   <th style={{ paddingLeft: '24px' }}>Staff ID</th>
-                  <th>Username</th>
+                  <th>Full Name</th>
+                  <th>Login Username</th>
                   <th>Role</th>
                   <th>Access PIN</th>
                   <th style={{ textAlign: 'right', paddingRight: '24px' }}>Actions</th>
@@ -118,10 +124,13 @@ export const Users = () => {
                     <td>
                       <div className="flex items-center gap-3">
                         <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '12px' }}>
-                          {user.username.charAt(0).toUpperCase()}
+                          {(user.fullName || user.username).charAt(0).toUpperCase()}
                         </div>
-                        <span style={{ fontWeight: '500' }}>{user.username}</span>
+                        <span style={{ fontWeight: '500' }}>{user.fullName || '---'}</span>
                       </div>
+                    </td>
+                    <td>
+                      <span style={{ color: 'var(--text-secondary)' }}>{user.username}</span>
                     </td>
                     <td>
                       <span className={`badge ${user.role === 'Admin' ? 'badge-danger' : user.role === 'UserCaptain' ? 'badge-primary' : 'badge-success'}`}>
@@ -156,8 +165,13 @@ export const Users = () => {
             
             <form onSubmit={handleSave}>
               <div className="mb-4">
-                <label className="form-label">Username</label>
-                <input type="text" className="form-input" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} placeholder="e.g. johndoe" required />
+                <label className="form-label">Full Name (Họ và Tên)</label>
+                <input type="text" className="form-input" value={formData.fullName} onChange={e => setFormData({...formData, fullName: e.target.value})} placeholder="e.g. Võ Vỹ Ân" required />
+              </div>
+
+              <div className="mb-4">
+                <label className="form-label">Login Username (Tên đăng nhập)</label>
+                <input type="text" className="form-input" value={formData.username} onChange={e => setFormData({...formData, username: e.target.value})} placeholder="e.g. vovan" required />
               </div>
               
               <div className="mb-4">

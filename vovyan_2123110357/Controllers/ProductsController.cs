@@ -35,7 +35,7 @@ namespace vovyan_2123110357.Controllers
                 await file.CopyToAsync(stream);
             }
 
-            var url = $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
+            var url = $"/uploads/{fileName}";
             return Ok(new { url });
         }
 

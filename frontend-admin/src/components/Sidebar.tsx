@@ -13,6 +13,37 @@ const navItems = [
 ];
 
 export const Sidebar = () => {
+  const role = localStorage.getItem('role') || 'Phucvu';
+  const username = localStorage.getItem('username') || '';
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('role');
+    window.location.href = '/login';
+  };
+
+  const filteredNavItems = navItems.filter(item => {
+    const userRole = role.toUpperCase();
+    const userName = username.toLowerCase();
+    
+    // Admin / Manager / user with 'admin' name have full access
+    if (userRole === 'ADMIN' || userRole === 'MANAGER' || userName === 'admin') return true;
+    
+    // Captain access
+    if (userRole === 'CAPTAIN' || userRole === 'USERCAPTAIN') {
+      return ['Dashboard', 'Orders', 'Mã giảm giá', 'POS System'].includes(item.name);
+    }
+    
+    // Phucvu access
+    if (userRole === 'PHUCVU' || userRole === 'USERPHUCVU') {
+      return ['POS System'].includes(item.name);
+    }
+    
+    // Default fallback: only POS if unknown
+    return item.name === 'POS System';
+  });
+
   return (
     <aside className="sidebar glass-panel">
       <div className="sidebar-header">
@@ -21,7 +52,7 @@ export const Sidebar = () => {
       </div>
       
       <nav className="sidebar-nav">
-        {navItems.map((item) => (
+        {filteredNavItems.map((item) => (
           <NavLink
             key={item.path}
             to={item.path}
@@ -34,7 +65,7 @@ export const Sidebar = () => {
       </nav>
 
       <div className="sidebar-footer">
-        <button className="nav-link logout-btn">
+        <button className="nav-link logout-btn" onClick={handleLogout}>
           <LogOut size={20} />
           <span>Logout</span>
         </button>

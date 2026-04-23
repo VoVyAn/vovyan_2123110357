@@ -13,6 +13,7 @@ import type { Product, Category } from '../api/productService';
 import productService from '../api/productService';
 import orderService from '../api/orderService';
 import discountService from '../api/discountService';
+import { dispatchNotification } from '../utils/notifications';
 import './POS.css';
 
 const TABLES = Array.from({ length: 30 }, (_, i) => ({
@@ -178,14 +179,15 @@ export const POS: React.FC = () => {
           quantity: item.quantity,
           price: item.price
         })),
-        totalAmount: subtotal + serviceFee + vat,
+        totalAmount: total,
         userId: staffUser?.id || null,
-        discountCode: discountCode || null
+        discountCode: discountCode || null,
+        paymentMethod: paymentMethod
       };
 
       await orderService.createPOSOrder(orderData);
       
-      alert('Thanh toán thành công! Đơn hàng đã được lưu.');
+      dispatchNotification(`Đơn hàng mới tại ${selectedTable.name} đã thanh toán thành công!`);
       
       // Clear cart for this specific table
       setTableCarts(prev => {
@@ -206,8 +208,10 @@ export const POS: React.FC = () => {
   // Calculations
   const subtotal = currentCart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
   const serviceFee = subtotal * 0.05;
-  const vat = subtotal * 0.08;
-  const total = subtotal + serviceFee + vat - appliedDiscount;
+  const vat = (subtotal - appliedDiscount) > 0 ? (subtotal - appliedDiscount) * 0.08 : subtotal * 0.08; 
+  // User wants VAT and Fee to stay even if 100% discount. 
+  // Let's stick to the simplest interpretation: Discount only subtracts from subtotal.
+  const total = (subtotal - appliedDiscount) + serviceFee + vat;
 
   const filteredProducts = products.filter(p => {
     const categoryMatch = activeCategory === 'Tất cả' || 
