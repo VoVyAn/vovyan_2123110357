@@ -1,42 +1,22 @@
 services:
-  # 1. Backend API (Docker)
   - type: web
     name: vovyan-backend
-    env: docker
-    dockerContext: .
-    dockerfilePath: Dockerfile
-    plan: free
+    runtime: docker
     envVars:
       - key: RENDER_DB_URL
         fromDatabase:
           name: vovyan-db
           property: connectionString
-      - key: IS_RENDER
-        value: "true"
-      - key: Jwt__Secret
-        value: "THIS_IS_A_VERY_LONG_SECRET_KEY_FOR_JWT_TOKEN_2026_RENDER"
-      - key: Jwt__Issuer
-        value: vovyan-backend
-      - key: Jwt__Audience
-        value: vovyan-client
 
-  # 2. Frontend Admin (Static Site)
   - type: web
     name: vovyan-admin-portal
     env: static
     rootDir: frontend-admin
-    buildCommand: npm install && npm run build
-    publishPath: dist
 
-  # 3. Frontend Booking (Static Site)
   - type: web
     name: vovyan-booking-portal
     env: static
     rootDir: frontend-booking
-    buildCommand: npm install && npm run build
-    publishPath: dist
 
 databases:
   - name: vovyan-db
-    databaseName: vovyan
-    plan: free
