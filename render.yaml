@@ -21,11 +21,13 @@ services:
         value: vovyan-client
 
   # 2. Frontend Admin (Static Site)
-  - type: static_site
+  - type: web
     name: vovyan-admin-portal
+    env: static
     rootDir: frontend-admin
     buildCommand: npm install && npm run build
     publishPath: dist
+    plan: free
     envVars:
       - key: VITE_API_URL
         fromService:
@@ -34,11 +36,13 @@ services:
           property: host
 
   # 3. Frontend Booking (Static Site)
-  - type: static_site
+  - type: web
     name: vovyan-booking-portal
+    env: static
     rootDir: frontend-booking
     buildCommand: npm install && npm run build
     publishPath: dist
+    plan: free
     envVars:
       - key: VITE_API_URL
         fromService:
