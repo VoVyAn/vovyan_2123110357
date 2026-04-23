@@ -4,7 +4,7 @@ services:
     name: vovyan-api
     runtime: docker
     dockerContext: vovyan_2123110357
-    dockerfilePath: Dockerfile
+    dockerfilePath: vovyan_2123110357/Dockerfile
     plan: free
     envVars:
       - key: DATABASE_URL
