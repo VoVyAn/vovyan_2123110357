@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ShoppingBag, Utensils, ListOrdered, LogOut, Users, Ticket, Monitor } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Utensils, ListOrdered, LogOut, Users, Ticket, Monitor, Calendar } from 'lucide-react';
 import './Sidebar.css';
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { path: '/users', name: 'Users', icon: <Users size={20} /> },
   { path: '/discounts', name: 'Mã giảm giá', icon: <Ticket size={20} /> },
   { path: '/pos', name: 'POS System', icon: <Monitor size={20} /> },
+  { path: '/bookings', name: 'Bookings', icon: <Calendar size={20} /> },
 ];
 
 export const Sidebar = () => {
@@ -32,12 +33,12 @@ export const Sidebar = () => {
     
     // Captain access
     if (userRole === 'CAPTAIN' || userRole === 'USERCAPTAIN') {
-      return ['Dashboard', 'Orders', 'Mã giảm giá', 'POS System'].includes(item.name);
+      return ['Dashboard', 'Orders', 'Mã giảm giá', 'POS System', 'Bookings'].includes(item.name);
     }
     
     // Phucvu access
     if (userRole === 'PHUCVU' || userRole === 'USERPHUCVU') {
-      return ['POS System'].includes(item.name);
+      return ['POS System', 'Bookings'].includes(item.name);
     }
     
     // Default fallback: only POS if unknown

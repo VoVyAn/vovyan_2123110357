@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace vovyan_2123110357.DTOs
 {
     public class POSOrderRequest
@@ -7,6 +9,9 @@ namespace vovyan_2123110357.DTOs
         public double TotalAmount { get; set; }
         public int? UserId { get; set; }
         public string? DiscountCode { get; set; }
+        public string? PaymentMethod { get; set; }
+        public double Vat { get; set; }
+        public double ServiceFee { get; set; }
     }
 
     public class POSOrderItemRequest

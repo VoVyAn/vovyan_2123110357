@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace vovyan_2123110357.DTOs
 {
     public class DashboardResponseDto
@@ -61,5 +63,30 @@ namespace vovyan_2123110357.DTOs
         public DateTime Date { get; set; }
         public int OrderCount { get; set; }
         public double Revenue { get; set; }
+    }
+    public class AdminOrderDetailDto
+    {
+        public int Id { get; set; }
+        public int? UserId { get; set; }
+        public string? StaffName { get; set; }
+        public string? CustomerName { get; set; }
+        public int? TableId { get; set; }
+        public string? TableCode { get; set; }
+        public double TotalAmount { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string? DiscountCode { get; set; }
+        public double DiscountAmount { get; set; }
+        public string? PaymentMethod { get; set; }
+        public double Vat { get; set; }
+        public double ServiceFee { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public List<OrderDetailItemDto> Items { get; set; } = new();
+    }
+
+    public class OrderDetailItemDto
+    {
+        public string ProductName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public double Price { get; set; }
     }
 }

@@ -13,6 +13,8 @@ namespace vovyan_2123110357.Models
         public string Status { get; set; } = "Pending";
         public string? DiscountCode { get; set; }
         public double DiscountAmount { get; set; }
+        public double Vat { get; set; }
+        public double ServiceFee { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }

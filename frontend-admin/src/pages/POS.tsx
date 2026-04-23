@@ -182,7 +182,9 @@ export const POS: React.FC = () => {
         totalAmount: total,
         userId: staffUser?.id || null,
         discountCode: discountCode || null,
-        paymentMethod: paymentMethod
+        paymentMethod: paymentMethod,
+        vat: vat,
+        serviceFee: serviceFee
       };
 
       await orderService.createPOSOrder(orderData);

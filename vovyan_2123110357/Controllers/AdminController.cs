@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using vovyan_2123110357.DTOs;
 using vovyan_2123110357.Data;
 using vovyan_2123110357.Models;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace vovyan_2123110357.Controllers
 {
@@ -94,6 +97,53 @@ namespace vovyan_2123110357.Controllers
                 TotalItems = totalItems,
                 Items = items
             });
+        }
+
+        [HttpGet("orders/detail/{id}")]
+        public IActionResult GetOrder(int id)
+        {
+            // Adding a log to see if it's hit (in a real scenario, this would be in server logs)
+            Console.WriteLine($"[DEBUG] Fetching order detail for ID: {id}");
+            var order = _context.Orders
+                .Include(o => o.User)
+                .FirstOrDefault(o => o.Id == id);
+
+            if (order == null) return NotFound();
+
+            var table = order.TableId.HasValue ? _context.RestaurantTables.Find(order.TableId.Value) : null;
+            var payment = _context.Payments.OrderByDescending(p => p.Id).FirstOrDefault(p => p.OrderId == id);
+
+            var items = _context.OrderDetails
+                .Where(od => od.OrderId == id)
+                .Join(_context.ProductDetails, od => od.ProductDetailId, pd => pd.Id, (od, pd) => new { od, pd.ProductId })
+                .Join(_context.Products, x => x.ProductId, p => p.Id, (x, p) => new OrderDetailItemDto
+                {
+                    ProductName = p.Name,
+                    Quantity = x.od.Quantity,
+                    Price = x.od.Price
+                })
+                .ToList();
+
+            var result = new AdminOrderDetailDto
+            {
+                Id = order.Id,
+                UserId = order.UserId,
+                StaffName = order.UserId.HasValue ? order.User?.FullName ?? order.User?.Username : null,
+                CustomerName = order.TableId.HasValue ? "Tại bàn" : order.User?.FullName ?? order.User?.Username ?? "Guest",
+                TableId = order.TableId,
+                TableCode = table?.Code,
+                TotalAmount = order.TotalAmount,
+                Status = order.Status,
+                DiscountCode = order.DiscountCode,
+                DiscountAmount = order.DiscountAmount,
+                PaymentMethod = payment?.Method ?? (order.TableId.HasValue ? "Tiền mặt" : "COD"),
+                Vat = order.Vat,
+                ServiceFee = order.ServiceFee,
+                CreatedAt = order.CreatedAt,
+                Items = items
+            };
+
+            return Ok(result);
         }
 
         [HttpPut("orders/{id}/status")]

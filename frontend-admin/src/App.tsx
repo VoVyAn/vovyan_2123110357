@@ -9,6 +9,7 @@ import { DiscountCodes } from './pages/DiscountCodes';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { POS } from './pages/POS';
+import { Bookings } from './pages/Bookings';
 import apiClient from './api/apiClient';
 
 // Initialize token from localStorage
@@ -36,6 +37,7 @@ function App() {
           <Route path="users" element={<Users />} />
           <Route path="discounts" element={<DiscountCodes />} />
           <Route path="pos" element={<POS />} />
+          <Route path="bookings" element={<Bookings />} />
         </Route>
       </Routes>
     </BrowserRouter>

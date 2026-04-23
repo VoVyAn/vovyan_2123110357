@@ -137,6 +137,12 @@ using (var scope = app.Services.CreateScope())
         
         // Force admin user to have Admin role to avoid 403 errors
         dbContext.Database.ExecuteSqlRaw("UPDATE dbo.Users SET Role = 'Admin' WHERE Username = 'admin';");
+        
+        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Orders') AND name = 'Vat') ALTER TABLE dbo.Orders ADD Vat FLOAT DEFAULT 0 NOT NULL;");
+        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Orders') AND name = 'ServiceFee') ALTER TABLE dbo.Orders ADD ServiceFee FLOAT DEFAULT 0 NOT NULL;");
+        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Reservations') AND name = 'StoreName') ALTER TABLE dbo.Reservations ADD StoreName NVARCHAR(MAX) NULL;");
+        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Reservations') AND name = 'Status') ALTER TABLE dbo.Reservations ADD Status NVARCHAR(MAX) DEFAULT 'Pending' NOT NULL;");
+        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Reservations') AND name = 'CreatedAt') ALTER TABLE dbo.Reservations ADD CreatedAt DATETIME DEFAULT GETDATE() NOT NULL;");
 
         // FIX: Convert absolute localhost image URLs to relative paths
         dbContext.Database.ExecuteSqlRaw(@"

@@ -49,7 +49,66 @@ namespace vovyan_2123110357.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Reservation>>> GetReservations()
         {
-            return await _context.Reservations.OrderByDescending(r => r.ReservationDate).ToListAsync();
+            return await _context.Reservations.OrderByDescending(r => r.CreatedAt).ToListAsync();
+        }
+
+        // PUT: api/Reservations/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutReservation(int id, Reservation reservation)
+        {
+            var existingReservation = await _context.Reservations.FindAsync(id);
+            if (existingReservation == null)
+            {
+                return NotFound();
+            }
+
+            existingReservation.CustomerName = reservation.CustomerName;
+            existingReservation.Phone = reservation.Phone;
+            existingReservation.Email = reservation.Email;
+            existingReservation.ReservationDate = reservation.ReservationDate;
+            existingReservation.NumberOfGuests = reservation.NumberOfGuests;
+            existingReservation.StoreName = reservation.StoreName;
+            existingReservation.Note = reservation.Note;
+            existingReservation.Status = reservation.Status;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ReservationExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        // DELETE: api/Reservations/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteReservation(int id)
+        {
+            var reservation = await _context.Reservations.FindAsync(id);
+            if (reservation == null)
+            {
+                return NotFound();
+            }
+
+            _context.Reservations.Remove(reservation);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool ReservationExists(int id)
+        {
+            return _context.Reservations.Any(e => e.Id == id);
         }
     }
 }

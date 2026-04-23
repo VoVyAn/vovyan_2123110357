@@ -23,7 +23,9 @@ namespace vovyan_2123110357.Models
         [Required]
         public int NumberOfGuests { get; set; }
 
-        public string Note { get; set; }
+        public string? StoreName { get; set; }
+
+        public string? Note { get; set; }
 
         public string Status { get; set; } = "Pending"; // Pending, Confirmed, Cancelled, Completed
 

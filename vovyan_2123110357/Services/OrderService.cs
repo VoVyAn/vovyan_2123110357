@@ -2,6 +2,8 @@ using vovyan_2123110357.Data;
 using vovyan_2123110357.Models;
 using vovyan_2123110357.DTOs;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace vovyan_2123110357.Services
 {
@@ -66,7 +68,7 @@ namespace vovyan_2123110357.Services
             return order;
         }
 
-        public Order CreatePOSOrder(int? tableId, List<POSOrderItemRequest> itemRequests, double totalAmount, int? userId, string? discountCode)
+        public Order CreatePOSOrder(int? tableId, List<POSOrderItemRequest> itemRequests, double totalAmount, int? userId, string? discountCode, string? paymentMethod, double vat, double serviceFee)
         {
             double discountAmount = 0;
             if (!string.IsNullOrEmpty(discountCode))
@@ -74,8 +76,6 @@ namespace vovyan_2123110357.Services
                 var discount = _context.DiscountCodes.FirstOrDefault(d => d.Code == discountCode && d.IsActive);
                 if (discount != null)
                 {
-                    // If the discount exists, we calculate it based on the total. 
-                    // Note: In a real app, we'd validate this more strictly.
                     discountAmount = (totalAmount * discount.Percentage) / 100;
                 }
             }
@@ -88,15 +88,26 @@ namespace vovyan_2123110357.Services
                 UserId = userId,
                 DiscountCode = discountCode,
                 DiscountAmount = discountAmount,
+                Vat = vat,
+                ServiceFee = serviceFee,
                 CreatedAt = DateTime.Now
             };
 
             _context.Orders.Add(order);
             _context.SaveChanges();
 
+            if (!string.IsNullOrEmpty(paymentMethod))
+            {
+                _context.Payments.Add(new Payment
+                {
+                    OrderId = order.Id,
+                    Method = paymentMethod,
+                    Status = "Paid"
+                });
+            }
+
             foreach (var itemReq in itemRequests)
             {
-                // Find first available detail for this product
                 var detail = _context.ProductDetails
                     .FirstOrDefault(d => d.ProductId == itemReq.ProductId);
                 

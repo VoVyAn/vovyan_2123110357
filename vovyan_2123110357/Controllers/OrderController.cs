@@ -4,6 +4,8 @@ using vovyan_2123110357.Models;
 using vovyan_2123110357.DTOs;
 using vovyan_2123110357.Data;
 
+using System.Linq;
+
 namespace vovyan_2123110357.Controllers
 {
     [Route("api/orders")]
@@ -30,7 +32,7 @@ namespace vovyan_2123110357.Controllers
         [HttpPost("pos")]
         public IActionResult CreatePOSOrder([FromBody] POSOrderRequest request)
         {
-            var order = _service.CreatePOSOrder(request.TableId, request.Items, request.TotalAmount, request.UserId, request.DiscountCode);
+            var order = _service.CreatePOSOrder(request.TableId, request.Items, request.TotalAmount, request.UserId, request.DiscountCode, request.PaymentMethod, request.Vat, request.ServiceFee);
             return Ok(order);
         }
 
