@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient';
 import { Lock, User, Mail, UserPlus } from 'lucide-react';
 import './Login.css'; // Dùng chung style với Login
@@ -10,6 +11,7 @@ export const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,15 +23,15 @@ export const Register = () => {
         username, 
         password, 
         fullName,
-        role: 'User' // Mặc định là User
+        role: 'Admin' // Mặc định tạo Admin cho trang quản trị
       });
       setSuccess(true);
       setTimeout(() => {
-        window.location.href = '/login';
+        navigate('/login');
       }, 2000);
     } catch (err: any) {
       console.error('Register Error:', err.response?.data);
-      setError('Không thể đăng ký tài khoản. Tên đăng nhập có thể đã tồn tại.');
+      setError(err.response?.data?.message || 'Không thể đăng ký tài khoản. Tên đăng nhập có thể đã tồn tại.');
     } finally {
       setLoading(false);
     }
