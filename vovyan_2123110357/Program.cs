@@ -4,13 +4,30 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.Json.Serialization;
 using vovyan_2123110357.Data;
 using vovyan_2123110357.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
-builder.Services.AddControllers();
+
+builder.Services.AddControllers().AddJsonOptions(x =>
+                x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+
+// Enable CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder =>
+        {
+            builder.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader();
+        });
+});
+
+
+
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
@@ -32,13 +49,15 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Services
+
 builder.Services.AddScoped<ProductService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JWTservice>();
@@ -47,7 +66,9 @@ builder.Services.AddScoped<MenuService>();
 builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<CartService>();
 builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<DiscountService>();
 
+// JWT
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "THIS_IS_A_FALLBACK_SECRET_KEY_CHANGE_ME_123456";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "vovyan-api";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "vovyan-client";
@@ -69,6 +90,7 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtAudience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
     };
+
     options.Events = new JwtBearerEvents
     {
         OnChallenge = async context =>
@@ -78,7 +100,7 @@ builder.Services.AddAuthentication(options =>
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(JsonSerializer.Serialize(new
             {
-                statusCode = StatusCodes.Status401Unauthorized,
+                statusCode = 401,
                 error = "Unauthorized",
                 message = "Missing or invalid access token."
             }));
@@ -89,7 +111,7 @@ builder.Services.AddAuthentication(options =>
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(JsonSerializer.Serialize(new
             {
-                statusCode = StatusCodes.Status403Forbidden,
+                statusCode = 403,
                 error = "Forbidden",
                 message = "You do not have permission to access this resource."
             }));
@@ -99,52 +121,87 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 
+
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.Migrate();
-    DatabaseSeeder.Seed(dbContext);
+
+    try
+    {
+        DatabaseSeeder.Seed(dbContext);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("❌ Seed lỗi: " + ex.Message);
+    }
 }
 
-// Middleware
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseDeveloperExceptionPage();
 }
 
 app.UseExceptionHandler(exceptionHandlerApp =>
 {
     exceptionHandlerApp.Run(async context =>
     {
-        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.StatusCode = 500;
         context.Response.ContentType = "application/json";
+
         await context.Response.WriteAsync(JsonSerializer.Serialize(new
         {
-            statusCode = StatusCodes.Status500InternalServerError,
+            statusCode = 500,
             error = "InternalServerError",
             message = "An unexpected error occurred."
         }));
     });
 });
+
 app.UseStatusCodePages(async statusContext =>
 {
     var response = statusContext.HttpContext.Response;
+
     if (response.HasStarted) return;
-    if (response.StatusCode == StatusCodes.Status404NotFound)
+
+    if (response.StatusCode == 404)
     {
         response.ContentType = "application/json";
         await response.WriteAsync(JsonSerializer.Serialize(new
         {
-            statusCode = StatusCodes.Status404NotFound,
+            statusCode = 404,
             error = "NotFound",
             message = "Resource not found."
         }));
     }
 });
 
+app.UseCors("AllowAll");
+
+app.UseStaticFiles(); // For wwwroot
+
+// Ensure uploads folder is accessible
+var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "uploads");
+if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+
+
+app.MapGet("/", () => "API is running...");
+
 
 app.MapControllers();
 

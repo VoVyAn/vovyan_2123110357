@@ -142,21 +142,44 @@ namespace vovyan_2123110357.Controllers
             return Ok();
         }
 
-        [HttpGet("staff")]
-        public IActionResult GetStaff()
+        [HttpGet("users")]
+        public IActionResult GetUsers()
         {
-            var staff = _context.Users.Where(u => u.Role == "Admin" || u.Role == "User").ToList();
-            return Ok(staff);
+            return Ok(_context.Users.ToList());
         }
 
-        [HttpPut("staff/{id}/role")]
-        public IActionResult UpdateStaffRole(int id, [FromQuery] string role)
+        [HttpPost("users")]
+        public IActionResult CreateUser(User user)
+        {
+            _context.Users.Add(user);
+            _context.SaveChanges();
+            return Ok(user);
+        }
+
+        [HttpPut("users/{id}")]
+        public IActionResult UpdateUser(int id, User updated)
         {
             var user = _context.Users.Find(id);
             if (user == null) return NotFound();
-            user.Role = role;
+
+            user.Username = updated.Username;
+            if (!string.IsNullOrEmpty(updated.Password))
+                user.Password = updated.Password;
+            user.Role = updated.Role;
+            user.Code = updated.Code;
+
             _context.SaveChanges();
             return Ok(user);
+        }
+
+        [HttpDelete("users/{id}")]
+        public IActionResult DeleteUser(int id)
+        {
+            var user = _context.Users.Find(id);
+            if (user == null) return NotFound();
+            _context.Users.Remove(user);
+            _context.SaveChanges();
+            return Ok();
         }
 
         [HttpGet("customers")]

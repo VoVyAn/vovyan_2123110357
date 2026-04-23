@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using vovyan_2123110357.Models;
 using vovyan_2123110357.Services;
 
@@ -24,10 +24,15 @@ namespace vovyan_2123110357.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login(User user)
+        public IActionResult Login([FromBody] vovyan_2123110357.DTOs.LoginRequest request)
         {
-            var result = _service.Login(user.Username, user.Password);
-            if (result == null) return Unauthorized();
+            if (request == null || string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
+            {
+                return BadRequest(new { message = "Username and password are required." });
+            }
+
+            var result = _service.Login(request.Username, request.Password);
+            if (result == null) return Unauthorized(new { message = "Invalid username or password" });
 
             var token = _jwtService.GenerateToken(result);
             return Ok(new

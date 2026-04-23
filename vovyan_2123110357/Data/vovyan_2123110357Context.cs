@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using vovyan_2123110357.Models;
 
 namespace vovyan_2123110357.Data
@@ -11,6 +11,7 @@ namespace vovyan_2123110357.Data
 
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductDetail> ProductDetails { get; set; }
+        public DbSet<Banner> Banners { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
@@ -21,6 +22,8 @@ namespace vovyan_2123110357.Data
         public DbSet<Payment> Payments { get; set; }
         public DbSet<RestaurantTable> RestaurantTables { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
+        public DbSet<Reservation> Reservations { get; set; }
+        public DbSet<DiscountCode> DiscountCodes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

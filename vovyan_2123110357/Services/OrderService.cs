@@ -1,5 +1,6 @@
-﻿using vovyan_2123110357.Data;
+using vovyan_2123110357.Data;
 using vovyan_2123110357.Models;
+using vovyan_2123110357.DTOs;
 using Microsoft.EntityFrameworkCore;
 
 namespace vovyan_2123110357.Services
@@ -62,6 +63,61 @@ namespace vovyan_2123110357.Services
             _context.CartItems.RemoveRange(items);
             _context.SaveChanges();
 
+            return order;
+        }
+
+        public Order CreatePOSOrder(int? tableId, List<POSOrderItemRequest> itemRequests, double totalAmount, int? userId, string? discountCode)
+        {
+            double discountAmount = 0;
+            if (!string.IsNullOrEmpty(discountCode))
+            {
+                var discount = _context.DiscountCodes.FirstOrDefault(d => d.Code == discountCode && d.IsActive);
+                if (discount != null)
+                {
+                    // If the discount exists, we calculate it based on the total. 
+                    // Note: In a real app, we'd validate this more strictly.
+                    discountAmount = (totalAmount * discount.Percentage) / 100;
+                }
+            }
+
+            var order = new Order
+            {
+                TableId = tableId,
+                TotalAmount = totalAmount - discountAmount,
+                Status = "Paid",
+                UserId = userId,
+                DiscountCode = discountCode,
+                DiscountAmount = discountAmount,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.Orders.Add(order);
+            _context.SaveChanges();
+
+            foreach (var itemReq in itemRequests)
+            {
+                // Find first available detail for this product
+                var detail = _context.ProductDetails
+                    .FirstOrDefault(d => d.ProductId == itemReq.ProductId);
+                
+                if (detail == null) continue;
+
+                _context.OrderDetails.Add(new OrderDetail
+                {
+                    OrderId = order.Id,
+                    ProductDetailId = detail.Id,
+                    Quantity = itemReq.Quantity,
+                    Price = itemReq.Price
+                });
+            }
+
+            if (tableId.HasValue)
+            {
+                var table = _context.RestaurantTables.Find(tableId.Value);
+                if (table != null) table.Status = "Empty";
+            }
+
+            _context.SaveChanges();
             return order;
         }
     }

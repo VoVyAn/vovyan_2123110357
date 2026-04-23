@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using vovyan_2123110357.Models;
 using vovyan_2123110357.Services;
 using vovyan_2123110357.DTOs;
@@ -10,10 +10,33 @@ namespace vovyan_2123110357.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly ProductService _service;
+        private readonly IWebHostEnvironment _env;
 
-        public ProductsController(ProductService service)
+        public ProductsController(ProductService service, IWebHostEnvironment env)
         {
             _service = service;
+            _env = env;
+        }
+
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadImage([FromForm] IFormFile file)
+        {
+            if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
+
+            var rootPath = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var uploadsFolder = Path.Combine(rootPath, "uploads");
+            if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var url = $"{Request.Scheme}://{Request.Host}/uploads/{fileName}";
+            return Ok(new { url });
         }
 
         [HttpGet]

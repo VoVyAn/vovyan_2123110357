@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace vovyan_2123110357.Models
 {
@@ -12,6 +12,7 @@ namespace vovyan_2123110357.Models
         [Required]
         public string Password { get; set; }
 
-        public string Role { get; set; } = "User"; // Admin/User
+        public string Role { get; set; } = "User"; // Admin/UserCaptain/UserPhucvu
+        public string Code { get; set; } // 4-digit code
     }
 }
