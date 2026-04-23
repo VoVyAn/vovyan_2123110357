@@ -61,24 +61,25 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     
-    // Check for Render's database environment variables
-    var databaseUrl = Environment.GetEnvironmentVariable("INTERNAL_DATABASE_URL") 
+    // Check for our custom Render DB URL
+    var databaseUrl = Environment.GetEnvironmentVariable("RENDER_DB_URL")
+                     ?? Environment.GetEnvironmentVariable("INTERNAL_DATABASE_URL")
                      ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+    
+    Console.WriteLine($"[DB DEBUG] Using connection source: {(string.IsNullOrEmpty(databaseUrl) ? "appsettings.json fallback" : "Environment Variable (" + (Environment.GetEnvironmentVariable("RENDER_DB_URL") != null ? "RENDER_DB_URL" : "Other") + ")")}");
     
     if (!string.IsNullOrEmpty(databaseUrl))
     {
         connectionString = databaseUrl;
-        
-        // If it's a postgres:// URL, Npgsql handles it, but we should ensure SSL
         if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
         {
-            // Add sslmode if not present
             if (!connectionString.Contains("sslmode="))
             {
                 connectionString += (connectionString.Contains("?") ? "&" : "?") + "sslmode=require";
             }
         }
     }
+    
     options.UseNpgsql(connectionString);
 });
 
