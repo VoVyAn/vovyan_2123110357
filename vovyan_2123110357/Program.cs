@@ -60,11 +60,28 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    // Handle Render's DATABASE_URL if present (Render often provides it as a secret)
     var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    
     if (!string.IsNullOrEmpty(databaseUrl))
     {
-        connectionString = databaseUrl;
+        // Render provides DATABASE_URL in postgres://user:password@host:port/database format
+        // We need to convert it to Npgsql format if it starts with postgres://
+        if (databaseUrl.StartsWith("postgres://") || databaseUrl.StartsWith("postgresql://"))
+        {
+            var databaseUri = new Uri(databaseUrl);
+            var userInfo = databaseUri.UserInfo.Split(':');
+            var user = userInfo[0];
+            var password = userInfo.Length > 1 ? userInfo[1] : "";
+            var host = databaseUri.Host;
+            var port = databaseUri.Port;
+            var database = databaseUri.AbsolutePath.TrimStart('/');
+
+            connectionString = $"Host={host};Port={port};Database={database};Username={user};Password={password};SSL Mode=Require;Trust Server Certificate=True";
+        }
+        else
+        {
+            connectionString = databaseUrl;
+        }
     }
     options.UseNpgsql(connectionString);
 });
