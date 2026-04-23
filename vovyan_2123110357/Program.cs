@@ -58,7 +58,16 @@ builder.Services.AddSwaggerGen();
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    // Handle Render's DATABASE_URL if present (Render often provides it as a secret)
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrEmpty(databaseUrl))
+    {
+        connectionString = databaseUrl;
+    }
+    options.UseNpgsql(connectionString);
+});
 
 
 builder.Services.AddScoped<ProductService>();
@@ -130,29 +139,29 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.Migrate();
     
-    // Ensure FullName column exists and admin has correct role
+    // Ensure columns exist and admin has correct role (PostgreSQL syntax)
     try {
-        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Users') AND name = 'FullName') ALTER TABLE dbo.Users ADD FullName NVARCHAR(MAX) NULL;");
-        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Users') AND name = 'Code') ALTER TABLE dbo.Users ADD Code NVARCHAR(MAX) NULL;");
+        dbContext.Database.ExecuteSqlRaw("ALTER TABLE \"Users\" ADD COLUMN IF NOT EXISTS \"FullName\" TEXT NULL;");
+        dbContext.Database.ExecuteSqlRaw("ALTER TABLE \"Users\" ADD COLUMN IF NOT EXISTS \"Code\" TEXT NULL;");
         
         // Force admin user to have Admin role to avoid 403 errors
-        dbContext.Database.ExecuteSqlRaw("UPDATE dbo.Users SET Role = 'Admin' WHERE Username = 'admin';");
+        dbContext.Database.ExecuteSqlRaw("UPDATE \"Users\" SET \"Role\" = 'Admin' WHERE \"Username\" = 'admin';");
         
-        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Orders') AND name = 'Vat') ALTER TABLE dbo.Orders ADD Vat FLOAT DEFAULT 0 NOT NULL;");
-        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Orders') AND name = 'ServiceFee') ALTER TABLE dbo.Orders ADD ServiceFee FLOAT DEFAULT 0 NOT NULL;");
-        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Reservations') AND name = 'StoreName') ALTER TABLE dbo.Reservations ADD StoreName NVARCHAR(MAX) NULL;");
-        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Reservations') AND name = 'Status') ALTER TABLE dbo.Reservations ADD Status NVARCHAR(MAX) DEFAULT 'Pending' NOT NULL;");
-        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Reservations') AND name = 'CreatedAt') ALTER TABLE dbo.Reservations ADD CreatedAt DATETIME DEFAULT GETDATE() NOT NULL;");
+        dbContext.Database.ExecuteSqlRaw("ALTER TABLE \"Orders\" ADD COLUMN IF NOT EXISTS \"Vat\" FLOAT8 DEFAULT 0 NOT NULL;");
+        dbContext.Database.ExecuteSqlRaw("ALTER TABLE \"Orders\" ADD COLUMN IF NOT EXISTS \"ServiceFee\" FLOAT8 DEFAULT 0 NOT NULL;");
+        dbContext.Database.ExecuteSqlRaw("ALTER TABLE \"Reservations\" ADD COLUMN IF NOT EXISTS \"StoreName\" TEXT NULL;");
+        dbContext.Database.ExecuteSqlRaw("ALTER TABLE \"Reservations\" ADD COLUMN IF NOT EXISTS \"Status\" TEXT DEFAULT 'Pending' NOT NULL;");
+        dbContext.Database.ExecuteSqlRaw("ALTER TABLE \"Reservations\" ADD COLUMN IF NOT EXISTS \"CreatedAt\" TIMESTAMP DEFAULT NOW() NOT NULL;");
 
         // FIX: Convert absolute localhost image URLs to relative paths
         dbContext.Database.ExecuteSqlRaw(@"
-            UPDATE dbo.Products 
-            SET ImageUrl = '/uploads/' + REVERSE(SUBSTRING(REVERSE(ImageUrl), 1, CHARINDEX('/', REVERSE(ImageUrl)) - 1))
-            WHERE ImageUrl LIKE 'http%://%/uploads/%';
+            UPDATE ""Products"" 
+            SET ""ImageUrl"" = '/uploads/' || REVERSE(SUBSTRING(REVERSE(""ImageUrl""), 1, POSITION('/' IN REVERSE(""ImageUrl"")) - 1))
+            WHERE ""ImageUrl"" LIKE 'http%://%/uploads/%';
             
-            UPDATE dbo.ProductDetails 
-            SET ImageUrl = '/uploads/' + REVERSE(SUBSTRING(REVERSE(ImageUrl), 1, CHARINDEX('/', REVERSE(ImageUrl)) - 1))
-            WHERE ImageUrl LIKE 'http%://%/uploads/%';
+            UPDATE ""ProductDetails"" 
+            SET ""ImageUrl"" = '/uploads/' || REVERSE(SUBSTRING(REVERSE(""ImageUrl""), 1, POSITION('/' IN REVERSE(""ImageUrl"")) - 1))
+            WHERE ""ImageUrl"" LIKE 'http%://%/uploads/%';
         ");
     } catch (Exception ex) {
         Console.WriteLine("⚠️ Database update warning: " + ex.Message);

@@ -13,6 +13,8 @@ export interface POSOrderRequest {
   userId: number | null;
   discountCode: string | null;
   paymentMethod: string;
+  vat: number;
+  serviceFee: number;
 }
 
 const createPOSOrder = (orderData: POSOrderRequest) => {

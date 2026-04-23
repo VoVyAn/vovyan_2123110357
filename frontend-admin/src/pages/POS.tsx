@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, 
-  Trash2, 
-  CreditCard, 
+import {
+  Search,
+  Trash2,
+  CreditCard,
   ShoppingBag,
   User as UserIcon,
   Ticket,
   ChevronLeft,
-  CheckCircle
 } from 'lucide-react';
 import type { Product, Category } from '../api/productService';
 import productService from '../api/productService';
 import orderService from '../api/orderService';
 import discountService from '../api/discountService';
+import { BASE_URL } from '../api/apiClient';
 import { dispatchNotification } from '../utils/notifications';
 import './POS.css';
 
@@ -41,7 +41,7 @@ export const POS: React.FC = () => {
   const [staffUser, setStaffUser] = useState<StaffUser | null>(null);
   const [showPinModal, setShowPinModal] = useState<boolean>(false);
   const [pendingTable, setPendingTable] = useState<any>(null);
-  
+
   const [selectedTable, setSelectedTable] = useState<any>(null);
   const [activeCategory, setActiveCategory] = useState<string>('Tất cả');
   const [tableCarts, setTableCarts] = useState<Record<number, CartItem[]>>({});
@@ -53,6 +53,12 @@ export const POS: React.FC = () => {
 
   // Current active cart for the selected table
   const currentCart = selectedTable ? (tableCarts[selectedTable.id] || []) : [];
+
+  // Reset discount when switching tables
+  useEffect(() => {
+    setDiscountCode('');
+    setAppliedDiscountPercentage(0);
+  }, [selectedTable?.id]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -117,18 +123,18 @@ export const POS: React.FC = () => {
   const addToCart = (product: any) => {
     if (!selectedTable) return;
     const tableId = selectedTable.id;
-    
+
     setTableCarts(prev => {
       const currentTableCart = prev[tableId] || [];
       const existing = currentTableCart.find(item => item.id === product.id);
       let newCart;
-      
+
       if (existing) {
         newCart = currentTableCart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       } else {
         newCart = [...currentTableCart, { id: product.id, name: product.name, price: product.price, quantity: 1 }];
       }
-      
+
       return { ...prev, [tableId]: newCart };
     });
   };
@@ -136,30 +142,29 @@ export const POS: React.FC = () => {
   const removeFromCart = (id: number) => {
     if (!selectedTable) return;
     const tableId = selectedTable.id;
-    
+
     setTableCarts(prev => ({
       ...prev,
       [tableId]: (prev[tableId] || []).filter(item => item.id !== id)
     }));
   };
 
-  const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
+  const [appliedDiscountPercentage, setAppliedDiscountPercentage] = useState<number>(0);
 
   const applyVoucher = async () => {
     if (!discountCode) return;
     try {
       const res = await discountService.getDiscounts();
       // Find the discount code (case insensitive and trimming whitespace)
-      const discount = res.data.find((d: any) => 
+      const discount = res.data.find((d: any) =>
         d.code.trim().toUpperCase() === discountCode.trim().toUpperCase() && d.isActive
       );
-      
+
       if (discount) {
-        const amount = (subtotal * discount.percentage) / 100;
-        setAppliedDiscount(amount);
+        setAppliedDiscountPercentage(discount.percentage);
       } else {
         alert('Mã giảm giá không hợp lệ hoặc đã hết hạn.');
-        setAppliedDiscount(0);
+        setAppliedDiscountPercentage(0);
       }
     } catch (error) {
       console.error("Error applying voucher:", error);
@@ -170,7 +175,7 @@ export const POS: React.FC = () => {
   const handlePayment = async () => {
     if (!selectedTable || currentCart.length === 0) return;
     const tableId = selectedTable.id;
-    
+
     try {
       const orderData = {
         tableId: tableId,
@@ -188,19 +193,19 @@ export const POS: React.FC = () => {
       };
 
       await orderService.createPOSOrder(orderData);
-      
+
       dispatchNotification(`Đơn hàng mới tại ${selectedTable.name} đã thanh toán thành công!`);
-      
+
       // Clear cart for this specific table
       setTableCarts(prev => {
         const newState = { ...prev };
         delete newState[tableId];
         return newState;
       });
-      
+
       setSelectedTable(null);
       setDiscountCode('');
-      setAppliedDiscount(0);
+      setAppliedDiscountPercentage(0);
     } catch (error) {
       console.error("Lỗi khi thanh toán:", error);
       alert('Có lỗi xảy ra khi xử lý thanh toán. Vui lòng thử lại.');
@@ -210,13 +215,14 @@ export const POS: React.FC = () => {
   // Calculations
   const subtotal = currentCart.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
   const serviceFee = subtotal * 0.05;
-  const vat = (subtotal - appliedDiscount) > 0 ? (subtotal - appliedDiscount) * 0.08 : subtotal * 0.08; 
+  const vat = subtotal * 0.08;
+  const discountAmount = (subtotal * appliedDiscountPercentage) / 100;
   // User wants VAT and Fee to stay even if 100% discount. 
   // Let's stick to the simplest interpretation: Discount only subtracts from subtotal.
-  const total = (subtotal - appliedDiscount) + serviceFee + vat;
+  const total = (subtotal - discountAmount) + serviceFee + vat;
 
   const filteredProducts = products.filter(p => {
-    const categoryMatch = activeCategory === 'Tất cả' || 
+    const categoryMatch = activeCategory === 'Tất cả' ||
       categories.find(c => c.id === p.categoryId)?.name === activeCategory;
     const searchMatch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     return categoryMatch && searchMatch;
@@ -249,8 +255,8 @@ export const POS: React.FC = () => {
           <div className="pos-main w-full col-span-2">
             <div className="tables-grid">
               {TABLES.map(table => (
-                <button 
-                  key={table.id} 
+                <button
+                  key={table.id}
                   className={`table-card ${table.status}`}
                   onClick={() => handleTableSelect(table)}
                 >
@@ -270,8 +276,8 @@ export const POS: React.FC = () => {
                 </button>
                 <div className="category-tabs">
                   {['Tất cả', ...categories.map(c => c.name)].map(cat => (
-                    <button 
-                      key={cat} 
+                    <button
+                      key={cat}
                       className={`cat-tab ${activeCategory === cat ? 'active' : ''}`}
                       onClick={() => setActiveCategory(cat)}
                     >
@@ -284,9 +290,9 @@ export const POS: React.FC = () => {
               <div className="products-grid-container">
                 <div className="search-bar-pos">
                   <Search size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="Tìm món nhanh..." 
+                  <input
+                    type="text"
+                    placeholder="Tìm món nhanh..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -295,9 +301,9 @@ export const POS: React.FC = () => {
                   {filteredProducts.map(p => (
                     <div key={p.id} className="product-card-pos" onClick={() => addToCart(p)}>
                       <div className="product-image-pos">
-                        <img 
-                          src={p.imageUrl.startsWith('http') ? p.imageUrl : `http://localhost:5000${p.imageUrl}`} 
-                          alt={p.name} 
+                        <img
+                          src={p.imageUrl.startsWith('http') ? p.imageUrl : `${BASE_URL}${p.imageUrl}`}
+                          alt={p.name}
                           onError={(e) => (e.currentTarget.src = 'https://placehold.co/200x200?text=No+Image')}
                         />
                         <div className="price-tag-pos">{p.price.toLocaleString()}đ</div>
@@ -315,7 +321,7 @@ export const POS: React.FC = () => {
               <div className="table-selector-mini">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <select 
+                  <select
                     className="table-select-mini-input"
                     value={selectedTable.id}
                     onChange={(e) => {
@@ -367,14 +373,14 @@ export const POS: React.FC = () => {
                   <div className="voucher-input-wrapper">
                     <div className="input-inner">
                       <Ticket size={18} className="ticket-icon" />
-                      <input 
-                        type="text" 
-                        placeholder="MÃ GIẢM GIÁ" 
+                      <input
+                        type="text"
+                        placeholder="MÃ GIẢM GIÁ"
                         className="voucher-field"
                         value={discountCode}
                         onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
                       />
-                      <button 
+                      <button
                         className="apply-btn-unified"
                         onClick={applyVoucher}
                       >
@@ -398,10 +404,10 @@ export const POS: React.FC = () => {
                     <span>{vat.toLocaleString()}đ</span>
                   </div>
 
-                  {appliedDiscount > 0 && (
+                  {discountAmount > 0 && (
                     <div className="summary-line">
-                      <span>Giảm giá</span>
-                      <span className="text-rose-500">-{appliedDiscount.toLocaleString()}đ</span>
+                      <span>Giảm giá ({appliedDiscountPercentage}%)</span>
+                      <span className="text-rose-500">-{discountAmount.toLocaleString()}đ</span>
                     </div>
                   )}
                 </div>
@@ -414,7 +420,7 @@ export const POS: React.FC = () => {
                 <div className="payment-options-grid">
                   <div className="option-item">
                     <p className="option-label">Phương thức</p>
-                    <select 
+                    <select
                       className="payment-select"
                       value={paymentMethod}
                       onChange={(e: any) => setPaymentMethod(e.target.value)}
@@ -431,7 +437,7 @@ export const POS: React.FC = () => {
                     </button>
                   </div>
                 </div>
-                
+
                 <button className="primary-btn pay-now-btn" onClick={handlePayment}>
                   <CreditCard size={20} />
                   XÁC NHẬN THANH TOÁN
@@ -448,7 +454,7 @@ export const POS: React.FC = () => {
           <div className="pin-modal animate-scale-in">
             <h2 className="mb-4 text-2xl font-black text-white text-center">XÁC NHẬN NHÂN VIÊN</h2>
             <p className="text-slate-400 text-center mb-8">Vui lòng nhập mã PIN 4 số của bạn</p>
-            
+
             <div className="pin-display mb-10">
               {[0, 1, 2, 3].map(i => (
                 <div key={i} className={`pin-dot ${pin.length > i ? 'filled' : ''}`} />
@@ -459,12 +465,12 @@ export const POS: React.FC = () => {
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
                 <button key={n} className="pin-btn" onClick={() => handlePinInput(n.toString())}>{n}</button>
               ))}
-              <button className="pin-btn text-rose-500" onClick={() => { setPin(''); setShowPinModal(false); setPendingTable(null); }}>
+              <button className="pin-btn text-rose-500" onClick={() => setPin('')}>
                 <Trash2 size={24} />
               </button>
               <button className="pin-btn" onClick={() => handlePinInput('0')}>0</button>
               <button className="pin-btn text-slate-400" onClick={() => { setShowPinModal(false); setPendingTable(null); setPin(''); }}>
-                Đóng
+                Hủy
               </button>
             </div>
           </div>

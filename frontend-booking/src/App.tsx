@@ -121,7 +121,8 @@ function App() {
       
       const reservationDate = new Date(`${formData.date}T${h.toString().padStart(2, '0')}:${minutes}:00`);
 
-      await axios.post('http://localhost:5000/api/Reservations', {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      await axios.post(`${API_BASE_URL}/api/Reservations`, {
         customerName: formData.name,
         phone: formData.phone,
         email: formData.email,
