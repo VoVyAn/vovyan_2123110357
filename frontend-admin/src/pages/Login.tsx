@@ -90,7 +90,7 @@ export const Login = () => {
         </div>
 
         <div className="login-footer">
-          Chưa có tài khoản? <a href="#">Liên hệ quản trị viên</a>
+          Chưa có tài khoản? <a href="/register">Đăng ký ngay</a>
         </div>
       </div>
     </div>
