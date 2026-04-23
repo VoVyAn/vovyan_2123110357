@@ -71,10 +71,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     Console.WriteLine($"[DB DEBUG] DATABASE_URL present: {!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DATABASE_URL"))}");
     Console.WriteLine($"[DB DEBUG] INTERNAL_DATABASE_URL present: {!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("INTERNAL_DATABASE_URL"))}");
     
+    string connectionString;
+    
     if (string.IsNullOrEmpty(databaseUrl))
     {
         Console.WriteLine("[DB DEBUG] Using appsettings.json fallback");
-        connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? "";
     }
     else
     {
