@@ -10,6 +10,9 @@ using vovyan_2123110357.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Fix for PostgreSQL DateTime issues on Render
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {

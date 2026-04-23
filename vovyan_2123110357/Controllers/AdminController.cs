@@ -24,11 +24,13 @@ namespace vovyan_2123110357.Controllers
         [HttpGet("dashboard")]
         public IActionResult Dashboard()
         {
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             var todayOrders = _context.Orders.Count(o => o.CreatedAt >= today);
             var todayRevenue = _context.Orders
                 .Where(o => o.CreatedAt >= today && o.Status == "Completed")
-                .Sum(o => (double?)o.TotalAmount) ?? 0;
+                .Select(o => (double)o.TotalAmount)
+                .AsEnumerable() // Pull to memory for Sum to avoid translation issues with nulls if needed
+                .Sum();
 
             var tableStats = new TableStatusDto
             {
